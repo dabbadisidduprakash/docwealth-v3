@@ -1240,6 +1240,14 @@
           render();
           return;
         }
+        if (serverSubmitted) {
+          state.submittedAt = state.submittedAt || (status.portal && status.portal.submittedAt) || new Date().toISOString();
+          state.confirmationNumber = state.confirmationNumber || PORTAL_CLIENT_ID || state.clientId || "Submitted";
+          state.currentSectionId = "submitted";
+          saveNow();
+          render();
+          return;
+        }
         if (!serverSubmitted && state.submittedAt) {
           state.submittedAt = "";
           state.confirmationNumber = "";
