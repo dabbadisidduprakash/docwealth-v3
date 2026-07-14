@@ -1591,6 +1591,8 @@ try {
         if (declaration) declaration.addEventListener("change", () => {
           state.declarationConfirmed = declaration.checked;
           saveNow();
+          var btn = document.querySelector('[data-action="submit"]');
+          if (btn) btn.disabled = !declaration.checked;
         });
       }
 
