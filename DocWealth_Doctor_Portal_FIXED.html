@@ -1322,6 +1322,32 @@
         }
       }
 
+      /* DW FIX: previously this form only ever knew about answers saved in THIS
+         browser's storage. If the client opened the same correction link on a
+         different device/browser (or cleared their cache), their earlier answers
+         were gone and they had to refill the whole form. This pulls their last
+         submitted answers from the server, but ONLY when there is nothing already
+         saved on this device — it never overwrites a draft someone is mid-typing. */
+      async function hydrateFromServerIfNeeded() {
+        if (!PORTAL_CLIENT_ID || !PORTAL_TOKEN) return;
+        if (state.started) return;   /* this device already has something — leave it alone */
+        try {
+          const response = await fetch("https://docwealth-backend.onrender.com/api/portal-data?clientId=" + encodeURIComponent(PORTAL_CLIENT_ID) + "&token=" + encodeURIComponent(PORTAL_TOKEN));
+          const result = await response.json();
+          const remote = result && result.ok ? result.portalData : null;
+          if (!remote || typeof remote !== "object") return;   /* nothing submitted before — normal blank form */
+          state = Object.assign(initialState(), remote, {
+            clientId: PORTAL_CLIENT_ID,
+            portalToken: PORTAL_TOKEN,
+            started: true
+          });
+          saveNow();
+          render();
+        } catch {
+          /* server unreachable — fall back to the normal blank form, same as before */
+        }
+      }
+
       async function applyPortalStatusOnLoad() {
         const status = await checkPortalStatus();
         if (!status) return;
@@ -1607,7 +1633,7 @@ try {
       state = startupState();
       render();
       bind();
-      applyPortalStatusOnLoad();
+      hydrateFromServerIfNeeded().then(applyPortalStatusOnLoad);
     </script>
    
   </body>
